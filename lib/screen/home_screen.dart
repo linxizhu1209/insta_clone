@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:insta_clone/connect/server.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -64,34 +65,81 @@ class FeedData {
   final String userName;
   final int likeCount;
   final String content;
+  final String imageUrl;
 
-  FeedData({required this.userName, required this.likeCount, required this.content});
+  FeedData({required this.imageUrl, required this.userName, required this.likeCount, required this.content});
 }
-final feedDataList = [
-  FeedData(userName: 'juju1', likeCount: 30, content: '오늘 점심 굿~'),
-  FeedData(userName: 'juju2', likeCount: 5, content: '아우 뭐야'),
-  FeedData(userName: 'juju3', likeCount: 54, content: '가방 득템'),
-  FeedData(userName: 'juju4', likeCount: 15, content: '공부잼따'),
-  FeedData(userName: 'juju5', likeCount: 22, content: '인스타용 멘트'),
-  FeedData(userName: 'juju6', likeCount: 34, content: '도쿄가자~'),
-  FeedData(userName: 'juju7', likeCount: 12, content: '내일은월욜일'),
-  FeedData(userName: 'juju8', likeCount: 54, content: '회사가자'),
-  FeedData(userName: 'juju9', likeCount: 30, content: '오늘 저녁 굿~'),
-];
+// final feedDataList = [
+//   FeedData(userName: 'juju1', likeCount: 30, content: '오늘 점심 굿~'),
+//   FeedData(userName: 'juju2', likeCount: 5, content: '아우 뭐야'),
+//   FeedData(userName: 'juju3', likeCount: 54, content: '가방 득템'),
+//   FeedData(userName: 'juju4', likeCount: 15, content: '공부잼따'),
+//   FeedData(userName: 'juju5', likeCount: 22, content: '인스타용 멘트'),
+//   FeedData(userName: 'juju6', likeCount: 34, content: '도쿄가자~'),
+//   FeedData(userName: 'juju7', likeCount: 12, content: '내일은월욜일'),
+//   FeedData(userName: 'juju8', likeCount: 54, content: '회사가자'),
+//   FeedData(userName: 'juju9', likeCount: 30, content: '오늘 저녁 굿~'),
+// ];
 
-class FeedList extends StatelessWidget {
+class FeedList extends StatefulWidget {
   const FeedList({super.key});
 
+  @override
+  State<StatefulWidget> createState() => _FeedListState();
+}
 
+class _FeedListState extends State<FeedList> {
+  late Future<List<FeedData>> _futureFeedData;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureFeedData = fetchFeedDataWithImages();
+  }
+
+  Future<List<FeedData>> fetchFeedDataWithImages() async {
+    try {
+      final imageUrls = await ApiService.fetchServerData();
+
+      return List.generate(imageUrls.length, (index) {
+        final imageUrl = imageUrls[index];
+        return FeedData(
+            imageUrl: imageUrl,
+            userName: 'JuJU${index + 1}',
+            likeCount: (index + 1) * 5,
+            content: '좋은 날');
+      });
+
+    } catch(e) {
+      throw Exception('error! $e}');
+    }
+  }
 
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: feedDataList.length,
-      itemBuilder: (context,index) => FeedItem(feedData: feedDataList[index]));
+    return FutureBuilder<List<FeedData>>(
+      future: _futureFeedData,
+      builder: (context, snapshot)
+    {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      } else if (snapshot.hasError) {
+        return Center(child: Text('Error: ${snapshot.error}'));
+      } else if (snapshot.hasData) {
+        final feedDataList = snapshot.data!;
+        return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: feedDataList.length,
+            itemBuilder: (context, index) =>
+                FeedItem(feedData: feedDataList[index])
+        );
+      } else {
+        return const Center(child: Text('No data available'));
+      }
+    },
+    );
   }
 }
 
@@ -132,8 +180,18 @@ class FeedItem extends StatelessWidget {
         Container(
           width: double.infinity,
           height: 280,
-          color: Colors.indigo.shade300,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: NetworkImage(feedData.imageUrl), // 이미지 URL
+              fit: BoxFit.cover, // 이미지를 컨테이너 크기에 맞게 조정
+            ),
+          ),
         ),
+        // Container(
+        //   width: double.infinity,
+        //   height: 280,
+        //   color: Colors.indigo.shade300,
+        // ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
           child: Row(

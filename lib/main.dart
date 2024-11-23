@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:insta_clone/connect/server.dart';
+import 'package:insta_clone/screen/chatroomList_screen.dart';
 
 import 'body.dart';
 
@@ -58,15 +60,23 @@ class _InstaCloneHomeState extends State<InstaCloneHome> {
           actions:  [
             IconButton(
                 icon: const Icon(Icons.favorite_outline, size: 32),
-                onPressed: () {
-                  print('Tab favorite');
+                onPressed: () async {
+                  // 여기 서버랑 연결해보기
+                  print('Server Response :');
                 },
         ),
             IconButton(
                 icon: const Icon(CupertinoIcons.paperplane, size: 32),
                 onPressed: (){
                   print('Tab paperplane');
-                },),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ChatroomListScreen(),
+                    ),
+                  );
+                },
+            ),
           ],
         )
           : null,
